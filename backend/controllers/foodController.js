@@ -1,6 +1,16 @@
 import foodModel from "../models/foodModel.js";
 import userModel from "../models/userModel.js";
 import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import {
+  uploadImageBuffer,
+  deleteCloudinaryImageByUrl,
+} from "../config/cloudinary.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const uploadsDir = path.join(__dirname, "../uploads");
 
 // add food items
 
@@ -20,17 +30,20 @@ const addFood = async (req, res) => {
   if (!req.body.category || !req.body.category.trim()) {
     return res.json({ success: false, message: "Category is required." });
   }
-  let image_filename = `${req.file.filename}`;
-  const food = new foodModel({
-    name: req.body.name,
-    description: req.body.description,
-    price: req.body.price,
-    category: req.body.category,
-    image: image_filename,
-  });
   try {
     let userData = await userModel.findById(req.body.userId);
     if (userData && userData.role === "admin") {
+      const imageUrl = await uploadImageBuffer(
+        req.file.buffer,
+        process.env.CLOUDINARY_FOLDER || "CraveCart"
+      );
+      const food = new foodModel({
+        name: req.body.name,
+        description: req.body.description,
+        price: req.body.price,
+        category: req.body.category,
+        image: imageUrl,
+      });
       await food.save();
       res.json({ success: true, message: "Food Added" });
     } else {
@@ -38,7 +51,7 @@ const addFood = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
-    res.json({ success: false, message: "Error" });
+    res.json({ success: false, message: error?.message || "Error" });
   }
 };
 
@@ -49,7 +62,7 @@ const listFood = async (req, res) => {
     res.json({ success: true, data: foods });
   } catch (error) {
     console.log(error);
-    res.json({ success: false, message: "Error" });
+    res.json({ success: false, message: error?.message || "Error" });
   }
 };
 
@@ -59,7 +72,16 @@ const removeFood = async (req, res) => {
     let userData = await userModel.findById(req.body.userId);
     if (userData && userData.role === "admin") {
       const food = await foodModel.findById(req.body.id);
-      fs.unlink(`uploads/${food.image}`, () => {});
+      if (!food) {
+        return res.json({ success: false, message: "Food not found." });
+      }
+
+      if (typeof food.image === "string" && /^https?:\/\//.test(food.image)) {
+        await deleteCloudinaryImageByUrl(food.image);
+      } else if (food.image) {
+        fs.unlink(path.join(uploadsDir, food.image), () => {});
+      }
+
       await foodModel.findByIdAndDelete(req.body.id);
       res.json({ success: true, message: "Food Removed" });
     } else {

@@ -2,26 +2,33 @@ import express from "express";
 import { addFood, listFood, removeFood } from "../controllers/foodController.js";
 import multer from "multer";
 import authMiddleware from "../middleware/auth.js";
-import path from "path";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const foodRouter = express.Router();
 
-// Image Storage Engine
+const allowedMimeTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
-const storage= multer.diskStorage({
-    destination: path.join(__dirname, "../uploads"),
-    filename:(req,file,cb)=>{
-        return cb(null,`${Date.now()}${file.originalname}`)
-    }
-})
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        if (allowedMimeTypes.includes(file.mimetype)) {
+            cb(null, true);
+            return;
+        }
+        cb(new Error("Only JPG, JPEG, PNG and WEBP images are allowed."));
+    },
+});
 
-const upload= multer({storage:storage})
+const uploadImage = (req, res, next) => {
+    upload.single("image")(req, res, (err) => {
+        if (err) {
+            return res.json({ success: false, message: err.message });
+        }
+        next();
+    });
+};
 
-foodRouter.post("/add",upload.single("image"),authMiddleware,addFood);
+foodRouter.post("/add", uploadImage, authMiddleware, addFood);
 foodRouter.get("/list",listFood);
 foodRouter.post("/remove",authMiddleware,removeFood);
 

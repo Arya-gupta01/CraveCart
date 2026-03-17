@@ -1,39 +1,36 @@
-# dependencies
-node_modules/
-
-# environment variables
+# Environment variables
 .env
-.env.*
-!.env.example
+.env.local
+.env.*.local
 
-# build files
-dist/
-build/
-out/
-
-# logs
-logs
-*.log
+# Dependencies
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# OS files
+# Build outputs
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS
 .DS_Store
 Thumbs.db
 
-# editor files
-.vscode/
-.idea/
+# Logs
+logs/
+*.log
 
-# cache
-.cache/
-.parcel-cache/
-
-# testing
-coverage/
-
-# temporary files
-*.tmp
-*.temp
-
+# Uploads (unless tracking specific uploads)
+uploads/
