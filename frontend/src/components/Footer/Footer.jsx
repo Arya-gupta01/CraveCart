@@ -34,7 +34,7 @@ const Footer = () => {
         </div>
         <hr />
         <p className="footer-copyright">
-            Copyright 2026 &copy; Foodify - Aryan Yadav - All Right Reserved.
+            Copyright 2026 &copy; CraveCart - Arya Gupta - All Right Reserved.
         </p>
     </div>
   )
